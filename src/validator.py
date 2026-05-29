@@ -1,4 +1,5 @@
 """Validator module — field-level validation for PO records."""
+from __future__ import annotations
 
 import logging
 import re
