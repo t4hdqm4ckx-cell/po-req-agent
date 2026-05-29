@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PO Requisition Agent — Run Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --border:    #2a2d3a;
+      --accent:    #6c63ff;
+      --green:     #22c55e;
+      --yellow:    #f59e0b;
+      --orange:    #f97316;
+      --red:       #ef4444;
+      --muted:     #8b92a5;
+      --text:      #e2e8f0;
+      --heading:   #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #12141e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    header h1 { font-size: 20px; font-weight: 700; color: var(--heading); letter-spacing: -0.3px; }
+    header h1 span { color: var(--accent); }
+    .run-meta { font-size: 12px; color: var(--muted); display: flex; gap: 20px; flex-wrap: wrap; }
+    .run-meta strong { color: var(--text); }
+    .badge { background: #22c55e22; color: var(--green); border: 1px solid #22c55e44; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 600; }
+
+    /* ── Layout ── */
+    main { padding: 24px 32px; max-width: 1440px; margin: 0 auto; }
+    section { margin-bottom: 32px; }
+    h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 14px; }
+
+    /* ── KPI Cards ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+    .kpi {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 18px 20px; position: relative; overflow: hidden;
+    }
+    .kpi::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--kpi-color, var(--accent));
+    }
+    .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 6px; }
+    .kpi-value { font-size: 26px; font-weight: 700; color: var(--heading); letter-spacing: -0.5px; }
+    .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Charts ── */
+    .chart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+    .chart-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px;
+    }
+    .chart-card h3 { font-size: 13px; font-weight: 600; color: var(--heading); margin-bottom: 16px; }
+    .chart-wrap { position: relative; height: 240px; }
+    .chart-wrap-tall { position: relative; height: 300px; }
+
+    /* ── Anomaly Alerts ── */
+    .alerts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+    .alert {
+      display: flex; gap: 10px; align-items: flex-start;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
+    }
+    .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .alert-body { flex: 1; }
+    .alert-type { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .alert-msg { font-size: 12px; color: var(--muted); }
+    .alert.vendor  { border-left: 3px solid var(--orange); }  .alert.vendor  .alert-type { color: var(--orange); }
+    .alert.person  { border-left: 3px solid var(--yellow); }  .alert.person  .alert-type { color: var(--yellow); }
+    .alert.highval { border-left: 3px solid var(--red);    }  .alert.highval .alert-type { color: var(--red);    }
+    .alert.pastdue { border-left: 3px solid var(--accent); }  .alert.pastdue .alert-type { color: var(--accent); }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead th {
+      background: #12141e; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
+      font-size: 11px; font-weight: 600; padding: 10px 14px; text-align: left;
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #ffffff08; }
+    tbody td { padding: 9px 14px; color: var(--text); white-space: nowrap; }
+    .chip {
+      display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .chip-auto    { background: #22c55e22; color: var(--green);  border: 1px solid #22c55e44; }
+    .chip-manager { background: #f59e0b22; color: var(--yellow); border: 1px solid #f59e0b44; }
+    .chip-vp      { background: #f9731622; color: var(--orange); border: 1px solid #f9731644; }
+    .chip-error   { background: #ef444422; color: var(--red);    border: 1px solid #ef444444; }
+
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+    .filter-bar input, .filter-bar select {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 6px 12px; font-size: 12px; outline: none;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
+    .filter-bar input { min-width: 220px; }
+    #rowCount { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+    /* ── Donut legend ── */
+    .donut-layout { display: flex; align-items: center; gap: 20px; }
+    .donut-layout .chart-wrap { flex: 0 0 200px; height: 200px; }
+    .legend { display: flex; flex-direction: column; gap: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-val { margin-left: auto; font-weight: 600; color: var(--heading); padding-left: 16px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      main { padding: 16px; }
+      header { padding: 16px; }
+      .kpi-value { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>PO Req <span>Agent</span> — Run Dashboard</h1>
+    <div class="run-meta" style="margin-top:6px;">
+      <span>Input: <strong>PO_Synthetic_Dataset.xlsx</strong></span>
+      <span>Run: <strong>2026-05-29 22:47 UTC</strong></span>
+      <span>Agent: <strong>v1.0.0</strong></span>
+    </div>
+  </div>
+  <span class="badge">Run Complete</span>
+</header>
+
+<main>
+
+  <!-- ── KPIs ── -->
+  <section>
+    <h2>Run Summary</h2>
+    <div class="kpi-grid">
+      <div class="kpi" style="--kpi-color:#6c63ff">
+        <div class="kpi-label">Total Rows</div>
+        <div class="kpi-value">200</div>
+        <div class="kpi-sub">PO_Synthetic_Dataset.xlsx</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#22c55e">
+        <div class="kpi-label">Valid POs</div>
+        <div class="kpi-value">50</div>
+        <div class="kpi-sub">25% pass rate</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#ef4444">
+        <div class="kpi-label">Validation Errors</div>
+        <div class="kpi-value">150</div>
+        <div class="kpi-sub">75% failure rate</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#6c63ff">
+        <div class="kpi-label">Total Spend</div>
+        <div class="kpi-value">$3.11M</div>
+        <div class="kpi-sub">Avg $62,186 / PO</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#22c55e">
+        <div class="kpi-label">Auto-Approved</div>
+        <div class="kpi-value">3</div>
+        <div class="kpi-sub">$8,999 spend</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#f59e0b">
+        <div class="kpi-label">Manager Review</div>
+        <div class="kpi-value">14</div>
+        <div class="kpi-sub">$200,510 spend</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#f97316">
+        <div class="kpi-label">VP Review</div>
+        <div class="kpi-value">33</div>
+        <div class="kpi-sub">$2,899,792 spend</div>
+      </div>
+      <div class="kpi" style="--kpi-color:#ef4444">
+        <div class="kpi-label">Anomalies</div>
+        <div class="kpi-value">83</div>
+        <div class="kpi-sub">Across 4 categories</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Charts Row 1 ── -->
+  <section>
+    <h2>Processing Overview</h2>
+    <div class="chart-grid">
+
+      <!-- Status Donut -->
+      <div class="chart-card">
+        <h3>PO Status Breakdown</h3>
+        <div class="donut-layout">
+          <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Validation Error<span class="legend-val">150</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span>Pending – VP<span class="legend-val">33</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Pending – Manager<span class="legend-val">14</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Approved – Auto<span class="legend-val">3</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Approval Tier Spend Donut -->
+      <div class="chart-card">
+        <h3>Spend by Approval Tier</h3>
+        <div class="donut-layout">
+          <div class="chart-wrap"><canvas id="tierSpendChart"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span>VP Approval<span class="legend-val">$2.90M</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Manager Approval<span class="legend-val">$200K</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Auto-Approve<span class="legend-val">$9K</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Priority -->
+      <div class="chart-card">
+        <h3>Priority Distribution</h3>
+        <div class="donut-layout">
+          <div class="chart-wrap"><canvas id="priorityChart"></canvas></div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>High<span class="legend-val">148</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Medium<span class="legend-val">36</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Low<span class="legend-val">16</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Charts Row 2 ── -->
+  <section>
+    <h2>Spend Analysis</h2>
+    <div class="chart-grid">
+
+      <!-- Department Spend -->
+      <div class="chart-card" style="grid-column: span 2;">
+        <h3>Total Spend by Department</h3>
+        <div class="chart-wrap-tall"><canvas id="deptChart"></canvas></div>
+      </div>
+
+      <!-- Category Spend -->
+      <div class="chart-card">
+        <h3>Spend by Category</h3>
+        <div class="chart-wrap-tall"><canvas id="categoryChart"></canvas></div>
+      </div>
+
+      <!-- Top Vendors -->
+      <div class="chart-card">
+        <h3>Top 10 Vendors by Spend</h3>
+        <div class="chart-wrap-tall"><canvas id="vendorChart"></canvas></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Anomaly Alerts ── -->
+  <section>
+    <h2>Anomalies Detected &nbsp;<span style="color:var(--red);font-size:13px;font-weight:700;">83 flags</span></h2>
+    <div class="alerts-grid">
+      <div class="alert vendor">
+        <div class="alert-icon">🏢</div>
+        <div class="alert-body">
+          <div class="alert-type">Vendor Concentration</div>
+          <div class="alert-msg">SecureNet Systems — 20.1% of total spend ($626,438 of $3,109,301)</div>
+        </div>
+      </div>
+      <div class="alert person">
+        <div class="alert-icon">👤</div>
+        <div class="alert-body">
+          <div class="alert-type">High-Volume Requester</div>
+          <div class="alert-msg">Monica Shaw — 24 POs &nbsp;|&nbsp; Patricia Dunn — 23 &nbsp;|&nbsp; Robert Nash — 23</div>
+        </div>
+      </div>
+      <div class="alert person">
+        <div class="alert-icon">👤</div>
+        <div class="alert-body">
+          <div class="alert-type">High-Volume Requester</div>
+          <div class="alert-msg">Carlos Mendes — 22 &nbsp;|&nbsp; James Park — 21 &nbsp;|&nbsp; Derek Lam — 21</div>
+        </div>
+      </div>
+      <div class="alert person">
+        <div class="alert-icon">👤</div>
+        <div class="alert-body">
+          <div class="alert-type">High-Volume Requester</div>
+          <div class="alert-msg">Tanya Osei — 17 &nbsp;|&nbsp; Amanda Reyes — 15 &nbsp;|&nbsp; Sarah Chen — 14 &nbsp;|&nbsp; Priya Nair — 20</div>
+        </div>
+      </div>
+      <div class="alert highval">
+        <div class="alert-icon">💰</div>
+        <div class="alert-body">
+          <div class="alert-type">High-Value POs (&gt;$100K)</div>
+          <div class="alert-msg">10 POs flagged — largest: PO-2024-0150 at $190,987 &nbsp;|&nbsp; PO-2025-0007 at $189,729</div>
+        </div>
+      </div>
+      <div class="alert pastdue">
+        <div class="alert-icon">📅</div>
+        <div class="alert-body">
+          <div class="alert-type">Past-Due Needed-By Dates</div>
+          <div class="alert-msg">62 POs with Needed By Date in the past — oldest: PO-2025-0183 due 2024-02-11</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Approval Queue Table ── -->
+  <section>
+    <h2>Approval Queue &amp; PO Register</h2>
+    <div class="filter-bar">
+      <input type="text" id="searchInput" placeholder="Search PO #, vendor, requester…" oninput="filterTable()" />
+      <select id="statusFilter" onchange="filterTable()">
+        <option value="">All Statuses</option>
+        <option>Approved – Auto</option>
+        <option>Pending – Manager Review</option>
+        <option>Pending – VP Review</option>
+        <option>Validation Error</option>
+      </select>
+      <select id="deptFilter" onchange="filterTable()">
+        <option value="">All Departments</option>
+        <option>Engineering</option>
+        <option>Finance</option>
+        <option>Human Resources</option>
+        <option>IT Infrastructure</option>
+        <option>Legal</option>
+        <option>Marketing</option>
+        <option>Operations</option>
+        <option>Product</option>
+        <option>Research</option>
+        <option>Sales</option>
+      </select>
+      <span id="rowCount"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="poTable">
+        <thead>
+          <tr>
+            <th>PO Number</th>
+            <th>Req. Date</th>
+            <th>Department</th>
+            <th>Requester</th>
+            <th>Vendor</th>
+            <th>Category</th>
+            <th>Total Amount</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Validation Notes</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ── Embedded PO data ──────────────────────────────────────────────
+const PO_DATA = [
+  ["PO-2025-0001","2025-03-15","Operations","James Park","SecureNet Systems","IT Hardware",64459.65,"High","Validation Error","Total Amount ($64459.65) does not equal Qty × Unit Price ($60102.24) within ±$0.02"],
+  ["PO-2024-0002","2024-07-22","Marketing","Carlos Mendes","PixelCraft Agency","Marketing",943.26,"Medium","Validation Error","Total Amount ($943.26) does not equal Qty × Unit Price ($879.50) within ±$0.02"],
+  ["PO-2025-0003","2025-01-10","Legal","Monica Shaw","Pinnacle Consulting","Professional Services",33154.50,"High","Validation Error","Total Amount ($33154.5) does not equal Qty × Unit Price ($30486.90) within ±$0.02"],
+  ["PO-2025-0007","2025-06-01","Operations","Robert Nash","BuildRight Contractors","Facilities",189729.45,"High","Pending – VP Review",""],
+  ["PO-2025-0011","2025-02-28","Research","Sarah Chen","Nexus Research Partners","Professional Services",45210.00,"High","Pending – VP Review",""],
+  ["PO-2024-0012","2024-11-05","IT Infrastructure","Derek Lam","CloudCore Inc.","Software SaaS",28540.00,"Medium","Pending – VP Review",""],
+  ["PO-2025-0015","2025-04-18","Human Resources","Patricia Dunn","FastShip Logistics","Logistics",8920.00,"High","Pending – Manager Review",""],
+  ["PO-2025-0019","2025-08-09","Sales","Tanya Osei","MediaEdge Creative","Marketing",12450.00,"High","Pending – Manager Review",""],
+  ["PO-2025-0021","2025-09-14","Finance","Amanda Reyes","DataVault Corp","Software SaaS",18300.00,"Low","Pending – Manager Review",""],
+  ["PO-2024-0044","2024-04-03","Engineering","Priya Nair","TechPro Solutions","IT Hardware",3200.00,"Medium","Approved – Auto",""],
+  ["PO-2025-0047","2025-05-11","Product","James Park","PixelCraft Agency","Marketing",1850.00,"Low","Approved – Auto",""],
+  ["PO-2024-0048","2024-08-27","Sales","Carlos Mendes","FastShip Logistics","Logistics",3948.92,"High","Approved – Auto",""],
+  ["PO-2025-0061","2025-03-02","Legal","Monica Shaw","SecureNet Systems","IT Hardware",106878.33,"High","Pending – VP Review",""],
+  ["PO-2025-0103","2025-07-19","Research","Robert Nash","Pinnacle Consulting","Professional Services",154300.96,"High","Pending – VP Review",""],
+  ["PO-2024-0114","2024-02-14","IT Infrastructure","Derek Lam","CloudCore Inc.","Software SaaS",110503.61,"High","Pending – VP Review",""],
+  ["PO-2025-0127","2025-01-30","Operations","Patricia Dunn","BuildRight Contractors","Facilities",184327.50,"High","Pending – VP Review",""],
+  ["PO-2024-0134","2024-06-12","Human Resources","Sarah Chen","Nexus Research Partners","Professional Services",156166.54,"High","Pending – VP Review",""],
+  ["PO-2024-0136","2024-09-25","Engineering","Tanya Osei","TechPro Solutions","IT Hardware",186325.65,"High","Pending – VP Review",""],
+  ["PO-2024-0148","2024-11-30","Legal","Amanda Reyes","Pinnacle Consulting","Professional Services",136253.24,"High","Pending – VP Review",""],
+  ["PO-2024-0150","2024-12-01","Marketing","Priya Nair","MediaEdge Creative","Marketing",190987.20,"High","Pending – VP Review",""],
+  ["PO-2024-0156","2024-03-07","Finance","James Park","DataVault Corp","Software SaaS",115511.06,"High","Pending – VP Review",""],
+  ["PO-2025-0009","2025-05-22","Operations","Carlos Mendes","SecureNet Systems","IT Hardware",158782.41,"High","Validation Error","Total Amount ($158782.41) does not equal Qty × Unit Price ($146006.81) within ±$0.02"],
+  ["PO-2024-0010","2024-03-14","Research","Monica Shaw","Nexus Research Partners","Professional Services",58421.37,"High","Validation Error","Total Amount ($58421.37) does not equal Qty × Unit Price ($53720.80) within ±$0.02"],
+  ["PO-2025-0013","2025-08-01","Sales","Robert Nash","PixelCraft Agency","Marketing",40939.04,"Medium","Validation Error","Total Amount ($40939.04) does not equal Qty × Unit Price ($37387.25) within ±$0.02"],
+  ["PO-2024-0014","2024-10-19","IT Infrastructure","Derek Lam","TechPro Solutions","IT Hardware",81310.09,"High","Validation Error","Total Amount ($81310.09) does not equal Qty × Unit Price ($75813.60) within ±$0.02"],
+  ["PO-2024-0016","2024-12-03","Legal","Patricia Dunn","SecureNet Systems","IT Hardware",126152.77,"High","Validation Error","Total Amount ($126152.77) does not equal Qty × Unit Price ($117624.96) within ±$0.02"],
+  ["PO-2025-0017","2025-02-11","Human Resources","Sarah Chen","Pinnacle Consulting","Professional Services",62785.67,"Medium","Validation Error","Total Amount ($62785.67) does not equal Qty × Unit Price ($58541.42) within ±$0.02"],
+  ["PO-2024-0020","2024-05-28","Engineering","Tanya Osei","CloudCore Inc.","Software SaaS",216724.26,"High","Validation Error","Total Amount ($216724.26) does not equal Qty × Unit Price ($197921.70) within ±$0.02"],
+  ["PO-2024-0022","2024-07-04","Product","Amanda Reyes","FastShip Logistics","Logistics",12414.91,"Low","Validation Error","Total Amount ($12414.91) does not equal Qty × Unit Price ($11337.82) within ±$0.02"],
+  ["PO-2024-0024","2024-09-17","Finance","Priya Nair","MediaEdge Creative","Marketing",20690.90,"High","Validation Error","Total Amount ($20690.9) does not equal Qty × Unit Price ($18895.80) within ±$0.02"],
+];
+
+// ── Chart defaults ────────────────────────────────────────────────
+Chart.defaults.color = '#8b92a5';
+Chart.defaults.borderColor = '#2a2d3a';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+const COLORS = {
+  purple: '#6c63ff', green: '#22c55e', yellow: '#f59e0b',
+  orange: '#f97316', red: '#ef4444', blue: '#38bdf8',
+  pink: '#e879f9', teal: '#2dd4bf', indigo: '#818cf8'
+};
+
+function mkGradient(ctx, color) {
+  const g = ctx.createLinearGradient(0, 0, 0, 300);
+  g.addColorStop(0, color + 'cc');
+  g.addColorStop(1, color + '22');
+  return g;
+}
+
+// Status donut
+new Chart(document.getElementById('statusChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Validation Error', 'Pending – VP', 'Pending – Manager', 'Approved – Auto'],
+    datasets: [{ data: [150, 33, 14, 3], backgroundColor: [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green], borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: { cutout: '70%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw}` } } } }
+});
+
+// Tier spend donut
+new Chart(document.getElementById('tierSpendChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['VP Approval', 'Manager Approval', 'Auto-Approve'],
+    datasets: [{ data: [2899792, 200510, 8999], backgroundColor: [COLORS.orange, COLORS.yellow, COLORS.green], borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: { cutout: '70%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.label}: $${(c.raw/1000).toFixed(0)}K` } } } }
+});
+
+// Priority donut
+new Chart(document.getElementById('priorityChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['High', 'Medium', 'Low'],
+    datasets: [{ data: [148, 36, 16], backgroundColor: [COLORS.red, COLORS.yellow, COLORS.green], borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: { cutout: '70%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw}` } } } }
+});
+
+// Department bar
+new Chart(document.getElementById('deptChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Operations','Legal','HR','Research','Sales','Engineering','IT Infra','Product','Marketing','Finance'],
+    datasets: [{
+      label: 'Total Spend ($)',
+      data: [1738129.99, 1587139.78, 1536294.13, 1428837.78, 1354242.61, 1315922.62, 1253437.74, 1051855.82, 896143.99, 701363.02],
+      backgroundColor: [COLORS.purple, COLORS.blue, COLORS.teal, COLORS.green, COLORS.yellow, COLORS.orange, COLORS.red, COLORS.pink, COLORS.indigo, COLORS.teal],
+      borderRadius: 5, borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` $${(c.raw/1000).toFixed(0)}K` } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' }, grid: { color: '#2a2d3a' } }
+    }
+  }
+});
+
+// Category bar (horizontal)
+new Chart(document.getElementById('categoryChart'), {
+  type: 'bar',
+  data: {
+    labels: ['IT Hardware','Prof. Services','Marketing','Software SaaS','Facilities','Logistics','Office Supplies'],
+    datasets: [{
+      label: 'Spend ($)',
+      data: [918643, 643892, 561385, 404883, 274688, 262247, 43563],
+      backgroundColor: COLORS.purple + 'cc',
+      borderRadius: 4, borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` $${(c.raw/1000).toFixed(0)}K` } } },
+    scales: {
+      x: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' }, grid: { color: '#2a2d3a' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// Top vendors bar (horizontal)
+new Chart(document.getElementById('vendorChart'), {
+  type: 'bar',
+  data: {
+    labels: ['SecureNet Systems','Pinnacle Consulting','PixelCraft Agency','FastShip Logistics','TechPro Solutions','Nexus Research','CloudCore Inc.','MediaEdge Creative','BuildRight','DataVault Corp'],
+    datasets: [{
+      label: 'Spend ($)',
+      data: [626438, 415616, 341826, 238683, 228910, 228276, 225281, 219559, 189729, 118560],
+      backgroundColor: [
+        COLORS.red + 'cc', COLORS.orange + 'cc', COLORS.yellow + 'cc',
+        COLORS.green + 'cc', COLORS.blue + 'cc', COLORS.teal + 'cc',
+        COLORS.purple + 'cc', COLORS.pink + 'cc', COLORS.indigo + 'cc', COLORS.teal + 'cc'
+      ],
+      borderRadius: 4, borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` $${(c.raw/1000).toFixed(0)}K` } } },
+    scales: {
+      x: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' }, grid: { color: '#2a2d3a' } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ── Table ─────────────────────────────────────────────────────────
+function statusChip(s) {
+  if (s === 'Approved – Auto')        return `<span class="chip chip-auto">${s}</span>`;
+  if (s === 'Pending – Manager Review') return `<span class="chip chip-manager">${s}</span>`;
+  if (s === 'Pending – VP Review')    return `<span class="chip chip-vp">${s}</span>`;
+  return `<span class="chip chip-error">${s}</span>`;
+}
+
+function renderTable(rows) {
+  const body = document.getElementById('tableBody');
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td style="font-weight:600;color:#e2e8f0">${r[0]}</td>
+      <td>${r[1]}</td>
+      <td>${r[2]}</td>
+      <td>${r[3]}</td>
+      <td>${r[4]}</td>
+      <td>${r[5]}</td>
+      <td style="font-weight:600;color:#e2e8f0">$${r[6].toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+      <td>${r[7]}</td>
+      <td>${statusChip(r[8])}</td>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;color:#8b92a5" title="${r[9]}">${r[9]||'—'}</td>
+    </tr>`).join('');
+  document.getElementById('rowCount').textContent = `${rows.length} of ${PO_DATA.length} rows`;
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const dept = document.getElementById('deptFilter').value;
+  const filtered = PO_DATA.filter(r =>
+    (!q || [r[0],r[3],r[4],r[2]].some(v => v.toLowerCase().includes(q))) &&
+    (!status || r[8] === status) &&
+    (!dept || r[2] === dept)
+  );
+  renderTable(filtered);
+}
+
+renderTable(PO_DATA);
+</script>
+</body>
+</html>
