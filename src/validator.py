@@ -81,15 +81,17 @@ def _validate_record(rec: dict[str, Any]) -> list[str]:
     if unit_price is None or unit_price <= 0:
         errors.append("Unit Price ($) must be > 0")
 
-    # Total amount integrity check
+    # Total amount integrity check  (subtotal + tax, within rounding tolerance)
     total = _to_decimal(rec.get("Total Amount ($)"))
     if total is None or total <= 0:
         errors.append("Total Amount ($) must be > 0")
     elif qty and unit_price:
-        expected = qty * unit_price
+        tax_amount = _to_decimal(rec.get("Tax Amount ($)")) or Decimal("0")
+        expected = qty * unit_price + tax_amount
         if abs(total - expected) > ROUNDING_TOL:
             errors.append(
-                f"Total Amount (${total}) does not equal Qty × Unit Price "
+                f"Total Amount (${total}) does not equal "
+                f"(Qty × Unit Price) + Tax Amount "
                 f"(${expected:.2f}) within ±$0.02"
             )
 
