@@ -1,0 +1,13 @@
+vendor_id,vendor_name,category,payment_terms,preferred,notes
+V-1001,SecureNet Systems,IT Hardware,Net 30,true,Primary IT hardware supplier — concentration watch active
+V-1002,Pinnacle Consulting,Professional Services,Net 45,true,Preferred consulting partner
+V-1003,PixelCraft Agency,Marketing,Net 30,true,
+V-1004,FastShip Logistics,Logistics,Net 15,true,
+V-1005,TechPro Solutions,IT Hardware,Net 30,true,
+V-1006,Nexus Research Partners,Professional Services,Net 45,false,Requires VP sign-off on all contracts
+V-1007,CloudCore Inc.,Software SaaS,Net 30,true,
+V-1008,MediaEdge Creative,Marketing,Net 30,false,
+V-1009,BuildRight Contractors,Facilities,Net 60,true,Licensed and bonded — verified 2025-01
+V-1010,DataVault Corp,Software SaaS,Net 30,true,
+V-1011,OfficeFirst Supplies,Office Supplies,Net 15,true,
+V-1012,Global Freight Co.,Logistics,Net 30,false,Secondary logistics only

@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PO Requisition Agent — Approval & Validation Thresholds
+#
+# All dollar amounts are USD. Edit here; no source changes needed.
+# Values can be overridden at runtime via env vars (see CLAUDE.md).
+# ─────────────────────────────────────────────────────────────────────────────
+
+approval_tiers:
+  auto:
+    label: "Auto-Approve"
+    status: "Approved – Auto"
+    max_amount: 4999.99          # Inclusive upper bound
+
+  manager:
+    label: "Manager Approval"
+    status: "Pending – Manager Review"
+    min_amount: 5000.00
+    max_amount: 24999.99
+
+  vp:
+    label: "VP Approval"
+    status: "Pending – VP Review"
+    min_amount: 25000.00         # No upper bound
+
+validation:
+  rounding_tolerance: 0.02       # Max allowed Δ between Total and Qty × Unit Price
+  max_tax_rate: 0.15             # 15% — flag anything above this
+  min_quantity: 1
+  max_file_rows: 10000           # Agent halts and requests confirmation above this
+
+anomaly_detection:
+  vendor_concentration_pct: 0.20 # Flag if one vendor exceeds 20% of run spend
+  requester_max_pos: 10          # Flag if one requester submits more than this many POs
+  high_value_po_threshold: 100000.00  # Flag any single PO above this amount
+
+logging:
+  level: INFO                    # DEBUG | INFO | WARNING
+  date_format: "%Y-%m-%dT%H:%M:%SZ"

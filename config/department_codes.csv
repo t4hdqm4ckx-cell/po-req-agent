@@ -1,0 +1,11 @@
+department,cost_center,budget_owner,annual_budget_usd,notes
+Engineering,CC-101,CTO,2500000,
+Finance,CC-102,CFO,800000,
+Human Resources,CC-103,CHRO,1800000,
+IT Infrastructure,CC-104,CTO,1500000,
+Legal,CC-105,General Counsel,2000000,
+Marketing,CC-106,CMO,1200000,
+Operations,CC-107,COO,3000000,Includes facilities and logistics
+Product,CC-108,CPO,1400000,
+Research,CC-109,CTO,1800000,
+Sales,CC-110,CRO,2000000,
