@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "po_output_schema",
+  "title": "PO Requisition Output Row",
+  "description": "Schema for a processed row written to PO_Processed_<timestamp>.xlsx. Extends the input schema with agent-populated fields.",
+  "type": "object",
+
+  "allOf": [{ "$ref": "po_input_schema.json" }],
+
+  "required": [
+    "PO Number",
+    "Requisition Date",
+    "Department",
+    "Cost Center",
+    "Requester Name",
+    "Vendor Name",
+    "Vendor ID",
+    "Line Item Description",
+    "Quantity",
+    "Unit Price ($)",
+    "Total Amount ($)",
+    "Approval Tier",
+    "Approval Reason",
+    "Status",
+    "Processed Timestamp",
+    "Agent Version",
+    "Validation Notes"
+  ],
+
+  "properties": {
+
+    "Approval Tier": {
+      "type": "string",
+      "enum": ["Auto-Approve", "Manager Approval", "VP Approval"],
+      "description": "Tier assigned by the approval router based on Total Amount."
+    },
+
+    "Approval Reason": {
+      "type": "string",
+      "description": "Human-readable explanation of the tier assignment.",
+      "examples": ["Total Amount ($4,500.00) < $5,000 threshold — auto-approved"]
+    },
+
+    "Status": {
+      "type": "string",
+      "enum": [
+        "Approved – Auto",
+        "Pending – Manager Review",
+        "Pending – VP Review",
+        "Validation Error"
+      ],
+      "description": "Final processing status set by the agent."
+    },
+
+    "Processed Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the agent processed this row.",
+      "examples": ["2026-05-29T22:47:46.043899+00:00"]
+    },
+
+    "Agent Version": {
+      "type": "string",
+      "description": "Version string of the agent that produced this row.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0"]
+    },
+
+    "Validation Notes": {
+      "type": "string",
+      "description": "Pipe-separated list of validation errors for this row. Empty string if clean.",
+      "examples": [
+        "",
+        "Total Amount ($64459.65) does not equal Qty × Unit Price ($60102.24) within ±$0.02"
+      ]
+    }
+  }
+}

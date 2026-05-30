@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "po_input_schema",
+  "title": "PO Requisition Input Row",
+  "description": "Schema for a single row in the PO requisition input file (XLSX or CSV). All required fields must be non-empty; optional fields are validated if present.",
+  "type": "object",
+
+  "required": [
+    "PO Number",
+    "Requisition Date",
+    "Department",
+    "Cost Center",
+    "Requester Name",
+    "Vendor Name",
+    "Vendor ID",
+    "Line Item Description",
+    "Quantity",
+    "Unit Price ($)",
+    "Total Amount ($)"
+  ],
+
+  "properties": {
+
+    "PO Number": {
+      "type": "string",
+      "description": "Unique identifier for the purchase order.",
+      "pattern": "^PO-\\d{4}-\\d{4}$",
+      "examples": ["PO-2025-0001"]
+    },
+
+    "Requisition Date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the requisition was submitted (ISO 8601: YYYY-MM-DD).",
+      "examples": ["2025-03-15"]
+    },
+
+    "Needed By Date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Optional. Requested delivery date. Must be >= Requisition Date.",
+      "examples": ["2025-04-01"]
+    },
+
+    "Department": {
+      "type": "string",
+      "description": "Business unit submitting the requisition.",
+      "enum": [
+        "Engineering",
+        "Finance",
+        "Human Resources",
+        "IT Infrastructure",
+        "Legal",
+        "Marketing",
+        "Operations",
+        "Product",
+        "Research",
+        "Sales"
+      ]
+    },
+
+    "Cost Center": {
+      "type": "string",
+      "description": "Cost centre code. Must match pattern CC-NNN.",
+      "pattern": "^CC-\\d{3}$",
+      "examples": ["CC-101"]
+    },
+
+    "Requester Name": {
+      "type": "string",
+      "description": "Full name of the employee submitting the request.",
+      "minLength": 2,
+      "examples": ["Jane Smith"]
+    },
+
+    "Manager": {
+      "type": ["string", "null"],
+      "description": "Optional. Requester's direct manager.",
+      "examples": ["Bob Jones"]
+    },
+
+    "Vendor Name": {
+      "type": "string",
+      "description": "Legal name of the vendor.",
+      "minLength": 2,
+      "examples": ["SecureNet Systems"]
+    },
+
+    "Vendor ID": {
+      "type": "string",
+      "description": "Vendor identifier. Must match pattern V-NNNN and exist in vendor_allowlist.csv.",
+      "pattern": "^V-\\d{4}$",
+      "examples": ["V-1001"]
+    },
+
+    "Payment Terms": {
+      "type": ["string", "null"],
+      "description": "Optional. Standard payment terms agreed with the vendor.",
+      "examples": ["Net 30", "Net 45", "Net 60"]
+    },
+
+    "Category": {
+      "type": ["string", "null"],
+      "description": "Optional. Procurement category for spend analysis.",
+      "enum": [
+        "IT Hardware",
+        "Software SaaS",
+        "Professional Services",
+        "Marketing",
+        "Facilities",
+        "Logistics",
+        "Office Supplies",
+        null
+      ]
+    },
+
+    "Line Item Description": {
+      "type": "string",
+      "description": "Plain-language description of what is being purchased.",
+      "minLength": 5,
+      "examples": ["Cisco Catalyst 9300 Series Switches x4"]
+    },
+
+    "Quantity": {
+      "type": "integer",
+      "description": "Number of units. Must be a positive integer >= 1.",
+      "minimum": 1,
+      "examples": [4]
+    },
+
+    "Unit Price ($)": {
+      "type": "number",
+      "description": "Price per unit in USD. Must be > 0.",
+      "exclusiveMinimum": 0,
+      "examples": [1250.00]
+    },
+
+    "Subtotal ($)": {
+      "type": ["number", "null"],
+      "description": "Optional. Pre-tax subtotal. If present, should equal Quantity × Unit Price.",
+      "exclusiveMinimum": 0
+    },
+
+    "Tax Rate (%)": {
+      "type": ["number", "null"],
+      "description": "Optional. Applicable tax rate as a decimal (e.g. 0.08 = 8%). Must be between 0 and 0.15.",
+      "minimum": 0,
+      "maximum": 0.15
+    },
+
+    "Tax Amount ($)": {
+      "type": ["number", "null"],
+      "description": "Optional. Computed tax amount in USD.",
+      "minimum": 0
+    },
+
+    "Total Amount ($)": {
+      "type": "number",
+      "description": "Final total in USD. Must equal Quantity × Unit Price within ±$0.02 rounding tolerance.",
+      "exclusiveMinimum": 0,
+      "examples": [5000.00]
+    },
+
+    "Approval Tier": {
+      "type": ["string", "null"],
+      "description": "Optional on input — populated by agent. Auto-Approve | Manager Approval | VP Approval."
+    },
+
+    "Approval Reason": {
+      "type": ["string", "null"],
+      "description": "Optional on input — populated by agent."
+    },
+
+    "Status": {
+      "type": ["string", "null"],
+      "description": "Optional on input — populated by agent.",
+      "enum": [
+        "Approved – Auto",
+        "Pending – Manager Review",
+        "Pending – VP Review",
+        "Validation Error",
+        "Closed",
+        "Received",
+        "Partially Received",
+        null
+      ]
+    },
+
+    "Priority": {
+      "type": ["string", "null"],
+      "description": "Optional. Requester-assigned urgency.",
+      "enum": ["High", "Medium", "Low", null]
+    },
+
+    "Notes": {
+      "type": ["string", "null"],
+      "description": "Optional. Free-text notes from the requester."
+    }
+  },
+
+  "additionalProperties": true
+}
